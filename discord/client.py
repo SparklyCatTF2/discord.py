@@ -573,9 +573,11 @@ class Client:
         """
         is_windows = sys.platform == 'win32'
         loop = self.loop
-        if not is_windows:
+        try:
             loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
             loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
+        except (NotImplementedError, RuntimeError):
+            pass
 
         future = asyncio.ensure_future(self.start(*args, **kwargs), loop=loop)
         future.add_done_callback(lambda f: loop.stop())
@@ -585,7 +587,8 @@ class Client:
         except KeyboardInterrupt:
             log.info('Received signal to terminate bot and event loop.')
         finally:
-            self._do_cleanup()
+            if is_windows:
+                self._do_cleanup()
 
     # properties
 
